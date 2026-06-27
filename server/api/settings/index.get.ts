@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const userId = event.context.userId as string
+  const userId = event.context.userId as number
   const sql = useDb()
 
   const [user] = await sql`

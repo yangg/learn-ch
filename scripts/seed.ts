@@ -67,27 +67,7 @@ async function main() {
     )
   `
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS user_progress (
-      id SERIAL PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      character_id INTEGER NOT NULL REFERENCES characters(id),
-      status INTEGER NOT NULL DEFAULT 0,
-      updated_at TIMESTAMP DEFAULT NOW(),
-      UNIQUE(user_id, character_id)
-    )
-  `
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS user_settings (
-      id SERIAL PRIMARY KEY,
-      user_id TEXT NOT NULL UNIQUE,
-      batch_size INTEGER NOT NULL DEFAULT 20,
-      nickname TEXT
-    )
-  `
-
-  // Create users table
+  // Create users table (before user_progress which references it)
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -105,6 +85,17 @@ async function main() {
       id SERIAL PRIMARY KEY,
       code VARCHAR(100) NOT NULL UNIQUE,
       created_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_progress (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      character_id INTEGER NOT NULL REFERENCES characters(id),
+      status INTEGER NOT NULL DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(user_id, character_id)
     )
   `
 
@@ -157,7 +148,7 @@ async function main() {
   console.log(`📝 Inserting ${records.length} characters...`)
 
   // Batch insert in chunks of 100
-  const BATCH_SIZE = 100
+  const BATCH_SIZE = 1000
   let inserted = 0
 
   for (let i = 0; i < records.length; i += BATCH_SIZE) {

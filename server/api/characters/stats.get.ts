@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const userId = event.context.userId as string
+  const userId = event.context.userId as number
   const sql = useDb()
 
   const [totalRow] = await sql`SELECT COUNT(*)::int AS total FROM characters`

@@ -16,5 +16,5 @@ export default defineEventHandler((event) => {
   }
 
   // Attach userId to event context for downstream handlers
-  event.context.userId = session.userId
+  event.context.userId = Number(session.userId)
 })
