@@ -16,10 +16,6 @@ export function useDb() {
       idle_timeout: 20,
       connect_timeout: 10
     })
-    // Ensure nickname column exists
-    _sql`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS nickname TEXT;`.catch((err) => {
-      console.error('Migration failed to add nickname column:', err)
-    })
   }
   return _sql
 }

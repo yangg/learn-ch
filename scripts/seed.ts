@@ -87,6 +87,34 @@ async function main() {
     )
   `
 
+  // Create users table
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR(50) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      batch_size INTEGER NOT NULL DEFAULT 20,
+      nickname TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  // Create invitation_codes table
+  await sql`
+    CREATE TABLE IF NOT EXISTS invitation_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(100) NOT NULL UNIQUE,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+
+  // Insert initial invitation codes
+  await sql`
+    INSERT INTO invitation_codes (code)
+    VALUES ('我是阿光'), ('周敏老公')
+    ON CONFLICT (code) DO NOTHING
+  `
+
   console.log('✅ Tables created')
 
   // Read CSV file

@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   `
 
   const [settingsRow] = await sql`
-    SELECT nickname FROM user_settings WHERE user_id = ${userId}
+    SELECT nickname FROM users WHERE id = ${userId}
   `
 
   return {

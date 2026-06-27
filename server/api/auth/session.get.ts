@@ -1,8 +1,21 @@
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const session = getAppSession(event)
 
+  if (!session) {
+    return { loggedIn: false }
+  }
+
+  const sql = useDb()
+  const [user] = await sql`
+    SELECT id, username FROM users WHERE id = ${session.userId}
+  `
+
+  if (!user) {
+    return { loggedIn: false }
+  }
+
   return {
-    loggedIn: !!session,
-    user: session ? { id: session.userId } : undefined
+    loggedIn: true,
+    user: { id: user.id, username: user.username }
   }
 })

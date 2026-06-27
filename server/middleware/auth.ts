@@ -5,7 +5,7 @@ export default defineEventHandler((event) => {
   if (!path.startsWith('/api/')) return
 
   // Skip auth endpoints
-  if (path === '/api/auth/login' || path === '/api/auth/session') return
+  if (path === '/api/auth/login' || path === '/api/auth/session' || path === '/api/auth/register') return
 
   const session = getAppSession(event)
   if (!session) {

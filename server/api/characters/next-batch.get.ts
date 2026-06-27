@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   if (!count || count <= 0) {
     // Get user's batch_size setting, default to 20
     const [settings] = await sql`
-      SELECT batch_size FROM user_settings WHERE user_id = ${userId}
+      SELECT batch_size FROM users WHERE id = ${userId}
     `
     count = settings?.batch_size ?? 20
   }

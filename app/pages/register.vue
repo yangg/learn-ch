@@ -5,27 +5,33 @@ definePageMeta({
 
 const username = ref('')
 const password = ref('')
+const invitationCode = ref('')
 const loading = ref(false)
 const error = ref('')
 
-async function handleLogin() {
-  if (!username.value || !password.value) return
+async function handleRegister() {
+  if (!username.value || !password.value || !invitationCode.value) {
+    error.value = '请填写所有字段'
+    return
+  }
   loading.value = true
   error.value = ''
 
   try {
-    const result = await $fetch('/api/auth/login', {
+    const result = await $fetch('/api/auth/register', {
       method: 'POST',
-      body: { username: username.value, password: password.value }
+      body: {
+        username: username.value,
+        password: password.value,
+        invitationCode: invitationCode.value
+      }
     })
 
     if (result.success) {
       await navigateTo('/')
-    } else {
-      error.value = result.message || '登录失败'
     }
-  } catch {
-    error.value = '登录失败，请稍后再试'
+  } catch (e: any) {
+    error.value = e?.data?.statusMessage || '注册失败，请稍后再试'
   } finally {
     loading.value = false
   }
@@ -38,20 +44,20 @@ async function handleLogin() {
       <!-- Title -->
       <div class="mb-8">
         <div class="text-5xl mb-3 bounce-gentle">
-          🌈
+          ✨
         </div>
         <h1 class="text-3xl font-bold text-orange-700">
-          识字乐园
+          加入乐园
         </h1>
         <p class="text-stone-400 mt-1 text-sm">
-          快来认字吧！
+          创建你的账号
         </p>
       </div>
 
-      <!-- Login form -->
+      <!-- Register form -->
       <form
         class="space-y-4"
-        @submit.prevent="handleLogin"
+        @submit.prevent="handleRegister"
       >
         <UInput
           v-model="username"
@@ -71,6 +77,15 @@ async function handleLogin() {
           class="w-full"
         />
 
+        <UInput
+          v-model="invitationCode"
+          type="text"
+          placeholder="请输入邀请码"
+          size="xl"
+          icon="i-lucide-ticket"
+          class="w-full"
+        />
+
         <!-- Error message -->
         <p
           v-if="error"
@@ -79,7 +94,7 @@ async function handleLogin() {
           {{ error }}
         </p>
 
-        <!-- Login button -->
+        <!-- Register button -->
         <UButton
           type="submit"
           :loading="loading"
@@ -87,18 +102,18 @@ async function handleLogin() {
           block
           class="rounded-xl text-lg font-semibold"
         >
-          进入乐园 🚀
+          注册 🎉
         </UButton>
       </form>
 
-      <!-- Register link -->
+      <!-- Login link -->
       <p class="mt-6 text-sm text-stone-400">
-        还没有账号？
+        已有账号？
         <NuxtLink
-          to="/register"
+          to="/login"
           class="text-orange-500 font-medium hover:text-orange-600"
         >
-          注册一个
+          去登录
         </NuxtLink>
       </p>
     </div>
