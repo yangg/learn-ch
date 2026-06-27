@@ -9,6 +9,15 @@ interface Character {
   status: number
 }
 
+interface Stats {
+  total: number
+  pending: number
+  known: number
+  familiar: number
+  unknown: number
+  todayCount: number
+}
+
 const activeTab = ref('all')
 const page = ref(1)
 const pageSize = 200
@@ -44,7 +53,7 @@ const total = computed(() => data.value?.total ?? 0)
 const hasMore = computed(() => characters.value.length < total.value)
 
 // Fetch stats for tab counts
-const { data: stats } = useFetch('/api/characters/stats', {
+const { data: stats } = useFetch<Stats>('/api/characters/stats', {
   key: 'my-chars-stats'
 })
 
@@ -78,15 +87,15 @@ function goToCharacter(id: string) {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto px-4 pt-6 pb-24">
+  <div class="max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 pb-24">
     <h1 class="text-2xl font-bold text-orange-700 mb-4 text-center">我的汉字 📚</h1>
 
     <!-- Tabs -->
-    <div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+    <div class="flex gap-1.5 sm:gap-2 mb-5 overflow-x-auto pb-1 justify-between sm:justify-start">
       <button
         v-for="tab in tabItems"
         :key="tab.value"
-        class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all"
+        class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all flex-1 sm:flex-none text-center"
         :class="activeTab === tab.value
           ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
           : 'bg-white/80 text-stone-500 hover:bg-orange-50 border border-stone-200'"
@@ -110,7 +119,7 @@ function goToCharacter(id: string) {
 
     <!-- Character Grid -->
     <div v-else>
-      <div class="grid grid-cols-5 sm:grid-cols-8 gap-2">
+      <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-2">
         <div
           v-for="ch in characters"
           :key="ch.id"

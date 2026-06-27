@@ -36,12 +36,17 @@ export default defineEventHandler(async (event) => {
       AND updated_at >= CURRENT_DATE
   `
 
+  const [settingsRow] = await sql`
+    SELECT nickname FROM user_settings WHERE user_id = ${userId}
+  `
+
   return {
-    total: totalRow.total,
+    total: totalRow?.total || 0,
     pending: counts.pending,
     known: counts.known,
     familiar: counts.familiar,
     unknown: counts.unknown,
-    todayCount: todayRow.count
+    todayCount: todayRow?.count || 0,
+    nickname: settingsRow?.nickname || ''
   }
 })

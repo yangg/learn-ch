@@ -11,7 +11,7 @@ function verify(value: string, signature: string, secret: string): boolean {
   return timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
 }
 
-export function createSession(event: H3Event, userId: string) {
+export function createAppSession(event: H3Event, userId: string) {
   const config = useRuntimeConfig(event)
   const signature = sign(userId, config.sessionSecret)
   const cookieValue = `${userId}.${signature}`
@@ -25,7 +25,7 @@ export function createSession(event: H3Event, userId: string) {
   })
 }
 
-export function getSession(event: H3Event): { userId: string } | null {
+export function getAppSession(event: H3Event): { userId: string } | null {
   const cookie = getCookie(event, 'session')
   if (!cookie) return null
 
@@ -41,7 +41,7 @@ export function getSession(event: H3Event): { userId: string } | null {
   return { userId }
 }
 
-export function clearSession(event: H3Event) {
+export function clearAppSession(event: H3Event) {
   deleteCookie(event, 'session', {
     httpOnly: true,
     secure: !import.meta.dev,

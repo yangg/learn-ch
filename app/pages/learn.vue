@@ -39,6 +39,7 @@ const hintText = computed(() => {
   const words = currentChar.value.words.split(/[,，、]/).map(w => w.trim()).filter(Boolean)
   if (words.length === 0) return ''
   const word = words[0]
+  if (!word) return ''
   return word.replace(new RegExp(currentChar.value.char, 'g'), '___')
 })
 
@@ -61,10 +62,10 @@ async function fetchBatch() {
   loading.value = true
   try {
     // Get settings for batch size
-    const settings = await $fetch('/api/settings')
+    const settings = await $fetch<{ batchSize: number }>('/api/settings')
     const batchSize = settings.batchSize || 20
 
-    const data = await $fetch(`/api/characters/next-batch?count=${batchSize}`)
+    const data = await $fetch<{ characters: Character[] }>(`/api/characters/next-batch?count=${batchSize}`)
     if (data.characters && data.characters.length > 0) {
       characters.value = data.characters
       currentIndex.value = 0
@@ -219,9 +220,9 @@ onMounted(() => {
     </div>
 
     <!-- Learning flow -->
-    <div v-else class="max-w-lg mx-auto">
+    <div v-else class="max-w-lg mx-auto w-full px-4 min-h-[calc(100vh-4rem)] flex flex-col justify-between">
       <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-4 py-2 border-b border-stone-100">
         <button @click="goBack" class="flex items-center gap-1 text-stone-400 hover:text-orange-600 transition-colors">
           <UIcon name="i-lucide-arrow-left" class="text-xl" />
           <span class="text-sm">返回</span>
@@ -243,66 +244,71 @@ onMounted(() => {
         <div v-else class="w-28" />
       </div>
 
-      <!-- Character display -->
-      <Transition name="char-card" mode="out-in">
-        <div :key="currentIndex" class="text-center">
-          <!-- The character -->
-          <div class="py-8">
-            <div class="char-display mx-auto">{{ currentChar?.char }}</div>
-          </div>
-
-          <!-- Before answer -->
-          <div v-if="!showResult">
-            <!-- Hint -->
-            <Transition name="fade">
-              <div v-if="showHint" class="mb-6">
-                <div class="warm-card inline-block px-5 py-3">
-                  <span class="text-lg text-stone-600">{{ hintText }}</span>
-                </div>
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col justify-center py-4">
+        <Transition name="char-card" mode="out-in">
+          <div :key="currentIndex" class="text-center space-y-6">
+            <!-- Character Display inside Tian Zi Ge -->
+            <div class="py-4">
+              <div class="tian-zi-ge mx-auto">
+                <div class="char-display">{{ currentChar?.char }}</div>
               </div>
-            </Transition>
-
-            <!-- Action buttons -->
-            <div class="flex gap-3 mb-4">
-              <button
-                class="action-btn action-btn-green flex-1"
-                :disabled="submitting"
-                @click="selectStatus(1)"
-              >
-                认识
-              </button>
-              <button
-                v-if="!hintUsed"
-                class="action-btn action-btn-amber flex-1"
-                :disabled="submitting"
-                @click="selectStatus(2)"
-              >
-                熟悉
-              </button>
-              <button
-                class="action-btn action-btn-red flex-1"
-                :disabled="submitting"
-                @click="selectStatus(3)"
-              >
-                不认识
-              </button>
             </div>
 
-            <!-- Hint button -->
-            <button
-              v-if="!showHint"
-              class="text-sm text-orange-500 hover:text-orange-700 transition-colors font-medium"
-              @click="toggleHint"
-            >
-              给点提示 💡
-            </button>
-          </div>
+            <!-- BEFORE ANSWER -->
+            <div v-if="!showResult" class="space-y-6">
+              <!-- Hint Text -->
+              <div class="h-16 flex items-center justify-center">
+                <Transition name="fade">
+                  <div v-if="showHint" class="warm-card inline-block px-5 py-3">
+                    <span class="text-lg text-stone-600">{{ hintText }}</span>
+                  </div>
+                </Transition>
+              </div>
 
-          <!-- After answer (result section) -->
-          <Transition name="slide-up">
-            <div v-if="showResult && currentChar" class="space-y-4">
+              <!-- Action Buttons -->
+              <div class="space-y-4">
+                <div class="flex gap-3">
+                  <button
+                    class="action-btn action-btn-green flex-1"
+                    :disabled="submitting"
+                    @click="selectStatus(1)"
+                  >
+                    认识
+                  </button>
+                  <button
+                    v-if="!hintUsed"
+                    class="action-btn action-btn-amber flex-1"
+                    :disabled="submitting"
+                    @click="selectStatus(2)"
+                  >
+                    熟悉
+                  </button>
+                  <button
+                    class="action-btn action-btn-red flex-1"
+                    :disabled="submitting"
+                    @click="selectStatus(3)"
+                  >
+                    不认识
+                  </button>
+                </div>
+                <!-- Hint button -->
+                <div class="text-center">
+                  <button
+                    v-if="!showHint"
+                    class="text-sm text-orange-500 hover:text-orange-700 transition-colors font-medium"
+                    @click="toggleHint"
+                  >
+                    给点提示 💡
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- AFTER ANSWER (Result Details) -->
+            <div v-else-if="currentChar" class="space-y-4">
               <!-- Status badge -->
-              <div>
+              <div class="flex justify-center">
                 <span class="status-badge" :class="`status-badge-${currentChar.status}`">
                   {{ statusLabels[currentChar.status] }}
                 </span>
@@ -328,13 +334,18 @@ onMounted(() => {
               </div>
 
               <!-- Next button -->
-              <button class="action-btn action-btn-amber w-full mt-4" @click="nextChar">
-                {{ currentIndex < characters.length - 1 ? '下一个 →' : '查看结果 🌟' }}
-              </button>
+              <div class="pt-2">
+                <button class="action-btn action-btn-amber w-full" @click="nextChar">
+                  {{ currentIndex < characters.length - 1 ? '下一个 →' : '查看结果 🌟' }}
+                </button>
+              </div>
             </div>
-          </Transition>
-        </div>
-      </Transition>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- Safe Area bottom spacing -->
+      <div class="h-2" />
     </div>
   </div>
 </template>

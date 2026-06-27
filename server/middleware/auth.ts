@@ -7,7 +7,7 @@ export default defineEventHandler((event) => {
   // Skip auth endpoints
   if (path === '/api/auth/login' || path === '/api/auth/session') return
 
-  const session = getSession(event)
+  const session = getAppSession(event)
   if (!session) {
     throw createError({
       statusCode: 401,

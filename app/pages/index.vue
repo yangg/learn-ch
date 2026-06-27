@@ -1,5 +1,15 @@
 <script setup lang="ts">
-const { data: stats, refresh } = useFetch('/api/characters/stats', {
+interface Stats {
+  total: number
+  pending: number
+  known: number
+  familiar: number
+  unknown: number
+  todayCount: number
+  nickname: string
+}
+
+const { data: stats, refresh } = useFetch<Stats>('/api/characters/stats', {
   key: 'home-stats'
 })
 
@@ -44,10 +54,10 @@ const statCards = computed(() => [
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto px-4 pt-6 pb-24">
+  <div class="max-w-5xl mx-auto w-full px-4 md:px-8 pt-6 pb-24">
     <!-- Title -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-orange-700">brook 的识字乐园 ✨</h1>
+      <h1 class="text-2xl font-bold text-orange-700">{{ stats?.nickname || 'brook' }} 的识字乐园 ✨</h1>
       <p class="text-stone-400 text-sm mt-1">每天认几个字，积少成多</p>
     </div>
 
@@ -57,12 +67,12 @@ const statCards = computed(() => [
         <span class="text-sm font-medium text-stone-600">学习进度</span>
         <span class="text-sm font-semibold text-orange-600">{{ stats.known }} / {{ stats.total }}</span>
       </div>
-      <UProgress :value="progressPercent" size="lg" />
+      <UProgress :model-value="progressPercent" size="lg" />
       <p class="text-xs text-stone-400 mt-1.5 text-right">{{ progressPercent }}%</p>
     </div>
 
     <!-- Stat Cards Grid -->
-    <div class="grid grid-cols-2 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
       <div
         v-for="card in statCards"
         :key="card.label"

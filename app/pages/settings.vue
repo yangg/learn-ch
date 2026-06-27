@@ -3,17 +3,21 @@ const toast = useToast()
 const router = useRouter()
 
 // Settings
-const { data: settings, refresh: refreshSettings } = useFetch('/api/settings', {
+const { data: settings, refresh: refreshSettings } = useFetch<{ batchSize: number; nickname: string }>('/api/settings', {
   key: 'settings'
 })
 
 const batchSize = ref(20)
 const savingBatchSize = ref(false)
 
-// Sync batchSize from server
+const nickname = ref('')
+const savingNickname = ref(false)
+
+// Sync settings from server
 watch(settings, (val) => {
   if (val) {
     batchSize.value = val.batchSize
+    nickname.value = val.nickname
   }
 }, { immediate: true })
 
@@ -30,6 +34,22 @@ async function saveBatchSize() {
     toast.add({ title: '保存失败', color: 'error' })
   } finally {
     savingBatchSize.value = false
+  }
+}
+
+async function saveNickname() {
+  savingNickname.value = true
+  try {
+    await $fetch('/api/settings', {
+      method: 'PUT',
+      body: { nickname: nickname.value }
+    })
+    toast.add({ title: '已保存', description: '昵称已更新', color: 'success' })
+    await refreshSettings()
+  } catch {
+    toast.add({ title: '保存失败', color: 'error' })
+  } finally {
+    savingNickname.value = false
   }
 }
 
@@ -85,8 +105,30 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto px-4 pt-6 pb-24">
+  <div class="max-w-3xl mx-auto w-full px-4 md:px-8 pt-6 pb-24">
     <h1 class="text-2xl font-bold text-orange-700 mb-6 text-center">设置 ⚙️</h1>
+
+    <!-- Nickname setting -->
+    <div class="warm-card p-5 mb-5">
+      <label class="block text-sm font-medium text-stone-600 mb-2">我的昵称</label>
+      <p class="text-xs text-stone-400 mb-3">识字乐园里显示的名称</p>
+      <div class="flex items-center gap-3">
+        <UInput
+          v-model="nickname"
+          placeholder="请输入你的昵称..."
+          size="lg"
+          class="flex-1"
+        />
+        <UButton
+          :loading="savingNickname"
+          size="lg"
+          class="rounded-xl"
+          @click="saveNickname"
+        >
+          保存
+        </UButton>
+      </div>
+    </div>
 
     <!-- Batch size setting -->
     <div class="warm-card p-5 mb-5">
@@ -146,7 +188,7 @@ async function handleLogout() {
     <div class="mt-10">
       <UButton
         :loading="loggingOut"
-        color="red"
+        color="error"
         variant="outline"
         size="lg"
         block

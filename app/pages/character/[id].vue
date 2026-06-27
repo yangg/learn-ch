@@ -1,4 +1,14 @@
 <script setup lang="ts">
+interface Character {
+  id: string
+  seq: number
+  char: string
+  pinyin: string
+  words: string
+  sentence: string
+  status: number
+}
+
 definePageMeta({
   layout: false
 })
@@ -7,7 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const charId = computed(() => route.params.id as string)
 
-const { data: char, refresh } = useFetch(() => `/api/characters/${charId.value}`, {
+const { data: char, refresh } = useFetch<Character>(() => `/api/characters/${charId.value}`, {
   key: `character-${charId.value}`
 })
 
@@ -40,11 +50,14 @@ async function goPrev() {
   if (prevSeq < 1) return
   // Fetch character list to find prev ID
   try {
-    const data = await $fetch('/api/characters/list', {
+    const data = await $fetch<{ characters: Character[] }>('/api/characters/list', {
       params: { page: 1, pageSize: 1, seq: prevSeq }
     })
-    if (data.characters && data.characters.length > 0) {
-      await navigateTo(`/character/${data.characters[0].id}`)
+    if (data && data.characters && data.characters.length > 0) {
+      const firstChar = data.characters[0]
+      if (firstChar) {
+        await navigateTo(`/character/${firstChar.id}`)
+      }
     }
   } catch {
     // Silently handle
@@ -55,11 +68,14 @@ async function goNext() {
   if (!char.value) return
   const nextSeq = char.value.seq + 1
   try {
-    const data = await $fetch('/api/characters/list', {
+    const data = await $fetch<{ characters: Character[] }>('/api/characters/list', {
       params: { page: 1, pageSize: 1, seq: nextSeq }
     })
-    if (data.characters && data.characters.length > 0) {
-      await navigateTo(`/character/${data.characters[0].id}`)
+    if (data && data.characters && data.characters.length > 0) {
+      const firstChar = data.characters[0]
+      if (firstChar) {
+        await navigateTo(`/character/${firstChar.id}`)
+      }
     }
   } catch {
     // Silently handle
@@ -73,7 +89,7 @@ function goBack() {
 
 <template>
   <div class="min-h-screen px-4 pt-4 pb-8">
-    <div class="max-w-lg mx-auto">
+    <div class="w-full px-4 md:px-8">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <button @click="goBack" class="flex items-center gap-1 text-stone-400 hover:text-orange-600 transition-colors">
@@ -90,66 +106,71 @@ function goBack() {
       </div>
 
       <!-- Character detail -->
-      <div v-else class="text-center">
-        <!-- Large character -->
-        <div class="py-6">
-          <div class="char-display mx-auto">{{ char.char }}</div>
-        </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <!-- Left column: Character & basic info -->
+        <div class="md:col-span-5 text-center flex flex-col items-center">
+          <div class="py-4 w-full">
+            <div class="tian-zi-ge mx-auto">
+              <div class="char-display">{{ char.char }}</div>
+            </div>
+          </div>
 
-        <!-- Pinyin -->
-        <div class="pinyin-display mb-4">{{ char.pinyin }}</div>
+          <div class="pinyin-display my-3">{{ char.pinyin }}</div>
 
-        <!-- Status badge + dropdown -->
-        <div class="flex items-center justify-center gap-3 mb-6">
-          <span class="status-badge" :class="`status-badge-${char.status}`">
-            {{ statusLabels[char.status] }}
-          </span>
-          <USelect
-            :model-value="char.status"
-            :items="statusOptions"
-            value-key="value"
-            size="sm"
-            class="w-32"
-            @update:model-value="changeStatus"
-          />
-        </div>
-
-        <!-- Words -->
-        <div class="mb-5">
-          <h3 class="text-sm font-medium text-stone-400 mb-2">词组</h3>
-          <div class="flex flex-wrap gap-2 justify-center">
-            <span
-              v-for="(word, idx) in char.words.split(/[,，、]/).filter(Boolean)"
-              :key="idx"
-              class="word-tag"
-            >
-              {{ word.trim() }}
+          <div class="flex items-center justify-center gap-3 mb-6">
+            <span class="status-badge" :class="`status-badge-${char.status}`">
+              {{ statusLabels[char.status] }}
             </span>
+            <USelect
+              :model-value="char.status"
+              :items="statusOptions"
+              value-key="value"
+              size="sm"
+              class="w-32"
+              @update:model-value="changeStatus"
+            />
           </div>
         </div>
 
-        <!-- Sentence -->
-        <div v-if="char.sentence" class="mb-6">
-          <h3 class="text-sm font-medium text-stone-400 mb-2">例句</h3>
-          <div class="warm-card p-4 text-left">
-            <p class="text-stone-600 text-base leading-relaxed">{{ char.sentence }}</p>
+        <!-- Right column: Vocab, sentences, navigation -->
+        <div class="md:col-span-7 space-y-6">
+          <!-- Words -->
+          <div>
+            <h3 class="text-sm font-medium text-stone-400 mb-2">词组</h3>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="(word, idx) in char.words.split(/[,，、]/).filter(Boolean)"
+                :key="idx"
+                class="word-tag"
+              >
+                {{ word.trim() }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <!-- Prev / Next buttons -->
-        <div class="flex gap-3 mt-8">
-          <button
-            class="action-btn flex-1 bg-stone-100 text-stone-600 hover:bg-stone-200"
-            @click="goPrev"
-          >
-            ← 上一个
-          </button>
-          <button
-            class="action-btn flex-1 bg-stone-100 text-stone-600 hover:bg-stone-200"
-            @click="goNext"
-          >
-            下一个 →
-          </button>
+          <!-- Sentence -->
+          <div v-if="char.sentence">
+            <h3 class="text-sm font-medium text-stone-400 mb-2">例句</h3>
+            <div class="warm-card p-4 text-left">
+              <p class="text-stone-600 text-base leading-relaxed">{{ char.sentence }}</p>
+            </div>
+          </div>
+
+          <!-- Prev / Next buttons -->
+          <div class="flex gap-3 pt-4">
+            <button
+              class="action-btn flex-1 bg-stone-100 text-stone-600 hover:bg-stone-200"
+              @click="goPrev"
+            >
+              ← 上一个
+            </button>
+            <button
+              class="action-btn flex-1 bg-stone-100 text-stone-600 hover:bg-stone-200"
+              @click="goNext"
+            >
+              下一个 →
+            </button>
+          </div>
         </div>
       </div>
     </div>

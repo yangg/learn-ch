@@ -59,6 +59,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     characters: rows,
-    total: totalRows[0].total
+    total: totalRows[0]?.total || 0
   }
 })

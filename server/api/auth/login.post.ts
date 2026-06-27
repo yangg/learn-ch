@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     return { success: false, message: '密码不正确' }
   }
 
-  createSession(event, 'brook')
+  createAppSession(event, 'brook')
 
   return { success: true }
 })

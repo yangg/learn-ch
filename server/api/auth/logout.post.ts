@@ -1,4 +1,4 @@
 export default defineEventHandler((event) => {
-  clearSession(event)
+  clearAppSession(event)
   return { ok: true }
 })

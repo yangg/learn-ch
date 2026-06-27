@@ -1,5 +1,5 @@
 export default defineEventHandler((event) => {
-  const session = getSession(event)
+  const session = getAppSession(event)
 
   return {
     loggedIn: !!session,

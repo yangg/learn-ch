@@ -3,10 +3,11 @@ export default defineEventHandler(async (event) => {
   const sql = useDb()
 
   const [settings] = await sql`
-    SELECT batch_size FROM user_settings WHERE user_id = ${userId}
+    SELECT batch_size, nickname FROM user_settings WHERE user_id = ${userId}
   `
 
   return {
-    batchSize: settings?.batch_size ?? 20
+    batchSize: settings?.batch_size ?? 20,
+    nickname: settings?.nickname ?? ''
   }
 })

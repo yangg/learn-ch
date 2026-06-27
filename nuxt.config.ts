@@ -18,9 +18,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    authPassword: process.env.AUTH_PASSWORD || 'dev123',
-    sessionSecret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
-    databaseUrl: process.env.DATABASE_URL || ''
+    authPassword: process.env.AUTH_PASSWORD,
+    sessionSecret: process.env.SESSION_SECRET,
+    databaseUrl: process.env.DATABASE_URL
   },
 
   nitro: {

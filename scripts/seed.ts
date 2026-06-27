@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import postgres from 'postgres'
 
+try {
+  process.loadEnvFile()
+} catch {
+  // Ignore error if .env file doesn't exist (e.g., in production)
+}
+
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
   console.error('❌ DATABASE_URL environment variable is required')
@@ -9,7 +15,6 @@ if (!DATABASE_URL) {
 }
 
 const sql = postgres(DATABASE_URL, {
-  ssl: 'require',
   max: 1
 })
 
@@ -77,14 +82,15 @@ async function main() {
     CREATE TABLE IF NOT EXISTS user_settings (
       id SERIAL PRIMARY KEY,
       user_id TEXT NOT NULL UNIQUE,
-      batch_size INTEGER NOT NULL DEFAULT 20
+      batch_size INTEGER NOT NULL DEFAULT 20,
+      nickname TEXT
     )
   `
 
   console.log('✅ Tables created')
 
   // Read CSV file
-  const csvPath = resolve(import.meta.dirname!, '..', '通用规范汉字表_一级字表_词组例句.csv')
+  const csvPath = resolve(import.meta.dirname!, 'level1.csv')
   let content = readFileSync(csvPath, 'utf-8')
 
   // Handle BOM
