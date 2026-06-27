@@ -13,15 +13,17 @@ export default defineNuxtConfig({
     fonts: false
   },
 
-  routeRules: {
-    '/': { prerender: false }
-  },
-
   runtimeConfig: {
     authPassword: process.env.AUTH_PASSWORD,
     sessionSecret: process.env.SESSION_SECRET,
     databaseUrl: process.env.DATABASE_URL
   },
+
+  routeRules: {
+    '/': { prerender: false }
+  },
+
+  compatibilityDate: '2025-01-15',
 
   nitro: {
     preset: 'deno-deploy',
@@ -29,8 +31,6 @@ export default defineNuxtConfig({
       external: ['cloudflare:sockets']
     }
   },
-
-  compatibilityDate: '2025-01-15',
 
   eslint: {
     config: {

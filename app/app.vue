@@ -53,7 +53,10 @@ function isTabActive(tabTo: string) {
 
     <!-- Bottom Tab Bar -->
     <Transition name="slide-up">
-      <div v-if="showTabBar" class="tab-bar">
+      <div
+        v-if="showTabBar"
+        class="tab-bar"
+      >
         <nav>
           <NuxtLink
             v-for="tab in tabs"
@@ -62,7 +65,10 @@ function isTabActive(tabTo: string) {
             class="tab-bar-item"
             :class="{ active: isTabActive(tab.to) }"
           >
-            <UIcon :name="tab.icon" class="tab-icon" />
+            <UIcon
+              :name="tab.icon"
+              class="tab-icon"
+            />
             <span>{{ tab.label }}</span>
           </NuxtLink>
         </nav>

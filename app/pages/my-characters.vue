@@ -19,8 +19,6 @@ interface Stats {
 }
 
 const activeTab = ref('all')
-const page = ref(1)
-const pageSize = 200
 
 const tabItems = [
   { label: '全部', value: 'all' },
@@ -32,8 +30,8 @@ const tabItems = [
 // Build query params
 const queryParams = computed(() => {
   const params: Record<string, string | number> = {
-    page: page.value,
-    pageSize
+    page: 1,
+    pageSize: 100000
   }
   if (activeTab.value !== 'all') {
     params.status = activeTab.value
@@ -42,7 +40,7 @@ const queryParams = computed(() => {
 })
 
 // Fetch characters
-const { data, refresh, status: fetchStatus } = useFetch<{ characters: Character[], total: number }>('/api/characters/list', {
+const { data, status: fetchStatus } = useFetch<{ characters: Character[], total: number }>('/api/characters/list', {
   key: 'my-characters',
   params: queryParams,
   watch: [queryParams]
@@ -50,7 +48,6 @@ const { data, refresh, status: fetchStatus } = useFetch<{ characters: Character[
 
 const characters = computed(() => data.value?.characters ?? [])
 const total = computed(() => data.value?.total ?? 0)
-const hasMore = computed(() => characters.value.length < total.value)
 
 // Fetch stats for tab counts
 const { data: stats } = useFetch<Stats>('/api/characters/stats', {
@@ -74,11 +71,6 @@ function statusClass(status: number) {
 
 function onTabChange(value: string) {
   activeTab.value = value
-  page.value = 1
-}
-
-function loadMore() {
-  page.value++
 }
 
 function goToCharacter(id: string) {
@@ -88,7 +80,9 @@ function goToCharacter(id: string) {
 
 <template>
   <div class="max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 pb-24">
-    <h1 class="text-2xl font-bold text-orange-700 mb-4 text-center">我的汉字 📚</h1>
+    <h1 class="text-2xl font-bold text-orange-700 mb-4 text-center">
+      我的汉字 📚
+    </h1>
 
     <!-- Tabs -->
     <div class="flex gap-1.5 sm:gap-2 mb-5 overflow-x-auto pb-1 justify-between sm:justify-start">
@@ -106,15 +100,29 @@ function goToCharacter(id: string) {
     </div>
 
     <!-- Loading -->
-    <div v-if="fetchStatus === 'pending'" class="text-center py-12">
-      <div class="text-4xl mb-3 bounce-gentle">📚</div>
-      <p class="text-stone-400 text-sm">加载中...</p>
+    <div
+      v-if="fetchStatus === 'pending'"
+      class="text-center py-12"
+    >
+      <div class="text-4xl mb-3 bounce-gentle">
+        📚
+      </div>
+      <p class="text-stone-400 text-sm">
+        加载中...
+      </p>
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="characters.length === 0" class="text-center py-12">
-      <div class="text-5xl mb-3">📭</div>
-      <p class="text-stone-400">这里还没有汉字</p>
+    <div
+      v-else-if="characters.length === 0"
+      class="text-center py-12"
+    >
+      <div class="text-5xl mb-3">
+        📭
+      </div>
+      <p class="text-stone-400">
+        这里还没有汉字
+      </p>
     </div>
 
     <!-- Character Grid -->
@@ -132,14 +140,9 @@ function goToCharacter(id: string) {
       </div>
 
       <!-- Total count -->
-      <p class="text-center text-xs text-stone-400 mt-4">共 {{ total }} 个字</p>
-
-      <!-- Load more -->
-      <div v-if="hasMore" class="text-center mt-4">
-        <UButton variant="soft" size="lg" class="rounded-xl" @click="loadMore">
-          加载更多
-        </UButton>
-      </div>
+      <p class="text-center text-xs text-stone-400 mt-4">
+        共 {{ total }} 个字
+      </p>
     </div>
   </div>
 </template>

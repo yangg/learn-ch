@@ -36,19 +36,31 @@ async function handleLogin() {
     <div class="login-card w-full max-w-sm text-center">
       <!-- Title -->
       <div class="mb-8">
-        <div class="text-5xl mb-3 bounce-gentle">🌈</div>
-        <h1 class="text-3xl font-bold text-orange-700">识字乐园</h1>
-        <p class="text-stone-400 mt-1 text-sm">快来认字吧！</p>
+        <div class="text-5xl mb-3 bounce-gentle">
+          🌈
+        </div>
+        <h1 class="text-3xl font-bold text-orange-700">
+          识字乐园
+        </h1>
+        <p class="text-stone-400 mt-1 text-sm">
+          快来认字吧！
+        </p>
       </div>
 
       <!-- Username display -->
       <div class="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 border border-amber-100">
-        <UIcon name="i-lucide-user" class="text-orange-400 text-lg" />
+        <UIcon
+          name="i-lucide-user"
+          class="text-orange-400 text-lg"
+        />
         <span class="text-stone-600 font-medium">brook</span>
       </div>
 
       <!-- Password input -->
-      <form @submit.prevent="handleLogin" class="space-y-4">
+      <form
+        class="space-y-4"
+        @submit.prevent="handleLogin"
+      >
         <UInput
           v-model="password"
           type="password"
@@ -59,7 +71,12 @@ async function handleLogin() {
         />
 
         <!-- Error message -->
-        <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
+        <p
+          v-if="error"
+          class="text-red-500 text-sm"
+        >
+          {{ error }}
+        </p>
 
         <!-- Login button -->
         <UButton

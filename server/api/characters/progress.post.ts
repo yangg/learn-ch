@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   const userId = event.context.userId as string
   const sql = useDb()
-  const body = await readBody<{ character_id?: number; status?: number }>(event)
+  const body = await readBody<{ character_id?: number, status?: number }>(event)
 
   if (!body?.character_id || body.status === undefined || body.status === null) {
     throw createError({

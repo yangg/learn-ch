@@ -5,8 +5,8 @@ let _sql: ReturnType<typeof postgres> | null = null
 export function useDb() {
   if (!_sql) {
     const config = useRuntimeConfig()
-    const dbUrl = config.databaseUrl ||
-                  (globalThis as any).Deno?.env?.get('DATABASE_URL')
+    const dbUrl = config.databaseUrl
+      || (globalThis as any).Deno?.env?.get('DATABASE_URL')
 
     if (!dbUrl) {
       throw new Error('DATABASE_URL is not configured')
@@ -17,7 +17,7 @@ export function useDb() {
       connect_timeout: 10
     })
     // Ensure nickname column exists
-    _sql`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS nickname TEXT;`.catch(err => {
+    _sql`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS nickname TEXT;`.catch((err) => {
       console.error('Migration failed to add nickname column:', err)
     })
   }

@@ -105,7 +105,7 @@ async function main() {
 
   console.log(`📖 Parsing ${dataLines.length} characters from CSV...`)
 
-  const records: { level: number; seq: number; char: string; pinyin: string; words: string; sentence: string }[] = []
+  const records: { level: number, seq: number, char: string, pinyin: string, words: string, sentence: string }[] = []
 
   for (const line of dataLines) {
     const fields = parseCSVLine(line)

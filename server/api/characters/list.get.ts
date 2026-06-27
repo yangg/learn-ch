@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   const page = Math.max(1, Number(query.page) || 1)
-  const pageSize = Math.max(1, Math.min(500, Number(query.pageSize) || 100))
+  const pageSize = Math.max(1, Math.min(100000, Number(query.pageSize) || 100000))
   const offset = (page - 1) * pageSize
   const statusFilter = query.status !== undefined ? Number(query.status) : null
 

@@ -13,14 +13,30 @@ export default defineEventHandler(async (event) => {
     count = settings?.batch_size ?? 20
   }
 
-  const rows = await sql`
-    SELECT c.*, COALESCE(up.status, 0) AS status
-    FROM characters c
-    LEFT JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
-    WHERE up.id IS NULL OR up.status = 0
-    ORDER BY c.seq ASC
-    LIMIT ${count}
-  `
+  const excludeStr = query.exclude as string | undefined
+  const excludeIds = excludeStr ? excludeStr.split(',').map(Number).filter(n => !isNaN(n)) : []
+
+  let rows
+  if (excludeIds.length > 0) {
+    rows = await sql`
+      SELECT c.*, COALESCE(up.status, 0) AS status
+      FROM characters c
+      LEFT JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
+      WHERE (up.id IS NULL OR up.status = 0)
+        AND c.id NOT IN (${excludeIds})
+      ORDER BY c.seq ASC
+      LIMIT ${count}
+    `
+  } else {
+    rows = await sql`
+      SELECT c.*, COALESCE(up.status, 0) AS status
+      FROM characters c
+      LEFT JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
+      WHERE up.id IS NULL OR up.status = 0
+      ORDER BY c.seq ASC
+      LIMIT ${count}
+    `
+  }
 
   return { characters: rows }
 })

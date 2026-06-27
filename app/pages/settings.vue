@@ -3,7 +3,7 @@ const toast = useToast()
 const router = useRouter()
 
 // Settings
-const { data: settings, refresh: refreshSettings } = useFetch<{ batchSize: number; nickname: string }>('/api/settings', {
+const { data: settings, refresh: refreshSettings } = useFetch<{ batchSize: number, nickname: string }>('/api/settings', {
   key: 'settings'
 })
 
@@ -106,12 +106,16 @@ async function handleLogout() {
 
 <template>
   <div class="max-w-3xl mx-auto w-full px-4 md:px-8 pt-6 pb-24">
-    <h1 class="text-2xl font-bold text-orange-700 mb-6 text-center">设置 ⚙️</h1>
+    <h1 class="text-2xl font-bold text-orange-700 mb-6 text-center">
+      设置 ⚙️
+    </h1>
 
     <!-- Nickname setting -->
     <div class="warm-card p-5 mb-5">
       <label class="block text-sm font-medium text-stone-600 mb-2">我的昵称</label>
-      <p class="text-xs text-stone-400 mb-3">识字乐园里显示的名称</p>
+      <p class="text-xs text-stone-400 mb-3">
+        识字乐园里显示的名称
+      </p>
       <div class="flex items-center gap-3">
         <UInput
           v-model="nickname"
@@ -133,7 +137,9 @@ async function handleLogout() {
     <!-- Batch size setting -->
     <div class="warm-card p-5 mb-5">
       <label class="block text-sm font-medium text-stone-600 mb-2">每组字数</label>
-      <p class="text-xs text-stone-400 mb-3">每次学习或复习的汉字数量</p>
+      <p class="text-xs text-stone-400 mb-3">
+        每次学习或复习的汉字数量
+      </p>
       <div class="flex items-center gap-3">
         <UInput
           v-model.number="batchSize"
@@ -155,9 +161,14 @@ async function handleLogout() {
     </div>
 
     <!-- Import section (desktop only) -->
-    <div v-if="isDesktop" class="warm-card p-5 mb-5">
+    <div
+      v-if="isDesktop"
+      class="warm-card p-5 mb-5"
+    >
       <label class="block text-sm font-medium text-stone-600 mb-2">导入汉字</label>
-      <p class="text-xs text-stone-400 mb-3">粘贴 CSV 格式的汉字数据</p>
+      <p class="text-xs text-stone-400 mb-3">
+        粘贴 CSV 格式的汉字数据
+      </p>
       <UTextarea
         v-model="importText"
         placeholder="粘贴汉字数据..."
@@ -166,7 +177,10 @@ async function handleLogout() {
       />
 
       <!-- Import result -->
-      <div v-if="importResult" class="mb-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+      <div
+        v-if="importResult"
+        class="mb-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100"
+      >
         <p class="text-sm text-emerald-700">
           ✅ 成功导入 {{ importResult.imported }} / {{ importResult.total }} 个字
         </p>

@@ -22,10 +22,12 @@ const showResult = ref(false)
 const showHint = ref(false)
 const hintUsed = ref(false)
 const loading = ref(true)
-const submitting = ref(false)
 const groupStats = ref({ known: 0, familiar: 0, unknown: 0 })
 const completed = ref(false)
 const noCharacters = ref(false)
+const prefetchedCharacters = ref<Character[]>([])
+const prefetching = ref(false)
+let prefetchPromise: Promise<void> | null = null
 
 // Current character
 const currentChar = computed(() => characters.value[currentIndex.value])
@@ -73,6 +75,9 @@ async function fetchBatch() {
       hintUsed.value = false
       completed.value = false
       groupStats.value = { known: 0, familiar: 0, unknown: 0 }
+
+      // Prefetch the next batch in the background immediately!
+      prefetchNextBatch()
     } else {
       noCharacters.value = true
     }
@@ -83,33 +88,58 @@ async function fetchBatch() {
   }
 }
 
+// Prefetch the next batch of review characters in the background
+function prefetchNextBatch() {
+  if (prefetchedCharacters.value.length > 0 || prefetching.value || characters.value.length === 0) return prefetchPromise
+
+  prefetching.value = true
+  prefetchPromise = (async () => {
+    try {
+      const settings = await $fetch<{ batchSize: number }>('/api/settings')
+      const batchSize = settings.batchSize || 20
+
+      const excludeIds = characters.value.map(c => c.id).join(',')
+      const data = await $fetch<{ characters: Character[] }>(`/api/characters/review-batch?count=${batchSize}&exclude=${excludeIds}`)
+      if (data.characters && data.characters.length > 0) {
+        prefetchedCharacters.value = data.characters
+      }
+    } catch (err) {
+      console.error('Failed to prefetch next review batch:', err)
+    } finally {
+      prefetching.value = false
+      prefetchPromise = null
+    }
+  })()
+
+  return prefetchPromise
+}
+
 // Select status
-async function selectStatus(status: number) {
-  if (!currentChar.value || submitting.value) return
-  submitting.value = true
+function selectStatus(status: number) {
+  if (!currentChar.value || showResult.value) return
 
-  try {
-    await $fetch('/api/characters/progress', {
-      method: 'POST',
-      body: { character_id: currentChar.value.id, status }
-    })
+  const targetChar = currentChar.value
+  targetChar.status = status
 
-    currentChar.value.status = status
+  if (status === 1) groupStats.value.known++
+  else if (status === 2) groupStats.value.familiar++
+  else if (status === 3) groupStats.value.unknown++
 
-    if (status === 1) groupStats.value.known++
-    else if (status === 2) groupStats.value.familiar++
-    else if (status === 3) groupStats.value.unknown++
+  showResult.value = true
 
-    showResult.value = true
-  } catch {
-    // Silently handle
-  } finally {
-    submitting.value = false
-  }
+  $fetch('/api/characters/progress', {
+    method: 'POST',
+    body: { character_id: targetChar.id, status }
+  }).catch((err) => {
+    console.error('Failed to save progress in background:', err)
+  })
+
+  // Start prefetching next batch in background
+  prefetchNextBatch()
 }
 
 // Change status via dropdown
-async function changeStatus(newStatus: number) {
+function changeStatus(newStatus: number) {
   if (!currentChar.value) return
 
   const oldStatus = currentChar.value.status
@@ -123,9 +153,11 @@ async function changeStatus(newStatus: number) {
 
   currentChar.value.status = newStatus
 
-  await $fetch('/api/characters/progress', {
+  $fetch('/api/characters/progress', {
     method: 'POST',
     body: { character_id: currentChar.value.id, status: newStatus }
+  }).catch((err) => {
+    console.error('Failed to change status in background:', err)
   })
 }
 
@@ -142,6 +174,9 @@ function nextChar() {
     showResult.value = false
     showHint.value = false
     hintUsed.value = false
+
+    // Start prefetching next batch in background
+    prefetchNextBatch()
   } else {
     completed.value = true
   }
@@ -153,9 +188,29 @@ function goBack() {
 }
 
 // Start another round
-function startAgain() {
+async function startAgain() {
   noCharacters.value = false
-  fetchBatch()
+  if (prefetching.value && prefetchPromise) {
+    loading.value = true
+    await prefetchPromise
+    loading.value = false
+  }
+
+  if (prefetchedCharacters.value.length > 0) {
+    characters.value = prefetchedCharacters.value
+    prefetchedCharacters.value = []
+    currentIndex.value = 0
+    showResult.value = false
+    showHint.value = false
+    hintUsed.value = false
+    completed.value = false
+    groupStats.value = { known: 0, familiar: 0, unknown: 0 }
+
+    // Start prefetching next batch in background immediately
+    prefetchNextBatch()
+  } else {
+    await fetchBatch()
+  }
 }
 
 onMounted(() => {
@@ -166,50 +221,99 @@ onMounted(() => {
 <template>
   <div class="min-h-screen px-4 pt-4 pb-8">
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center min-h-screen">
+    <div
+      v-if="loading"
+      class="flex items-center justify-center min-h-screen"
+    >
       <div class="text-center">
-        <div class="text-5xl mb-4 bounce-gentle">🔄</div>
-        <p class="text-stone-400">正在准备复习...</p>
+        <div class="text-5xl mb-4 bounce-gentle">
+          🔄
+        </div>
+        <p class="text-stone-400">
+          正在准备复习...
+        </p>
       </div>
     </div>
 
     <!-- No characters to review -->
-    <div v-else-if="noCharacters" class="flex items-center justify-center min-h-screen">
+    <div
+      v-else-if="noCharacters"
+      class="flex items-center justify-center min-h-screen"
+    >
       <div class="text-center celebrate">
-        <div class="text-7xl mb-4">🌟</div>
-        <h2 class="text-2xl font-bold text-orange-700 mb-2">太棒了！</h2>
-        <p class="text-stone-500 mb-6">没有需要复习的字</p>
-        <UButton size="xl" class="rounded-xl" @click="goBack">返回首页</UButton>
+        <div class="text-7xl mb-4">
+          🌟
+        </div>
+        <h2 class="text-2xl font-bold text-orange-700 mb-2">
+          太棒了！
+        </h2>
+        <p class="text-stone-500 mb-6">
+          没有需要复习的字
+        </p>
+        <UButton
+          size="xl"
+          class="rounded-xl"
+          @click="goBack"
+        >
+          返回首页
+        </UButton>
       </div>
     </div>
 
     <!-- Completed group -->
-    <div v-else-if="completed" class="flex items-center justify-center min-h-screen">
+    <div
+      v-else-if="completed"
+      class="flex items-center justify-center min-h-screen"
+    >
       <div class="text-center celebrate max-w-sm mx-auto">
-        <div class="text-7xl mb-4">🏆</div>
-        <h2 class="text-2xl font-bold text-orange-700 mb-4">复习完成！</h2>
+        <div class="text-7xl mb-4">
+          🏆
+        </div>
+        <h2 class="text-2xl font-bold text-orange-700 mb-4">
+          复习完成！
+        </h2>
 
         <!-- Group stats -->
         <div class="grid grid-cols-3 gap-3 mb-6">
           <div class="stat-card stat-green">
-            <div class="text-2xl font-bold text-emerald-600">{{ groupStats.known }}</div>
-            <div class="text-xs text-stone-500">认识</div>
+            <div class="text-2xl font-bold text-emerald-600">
+              {{ groupStats.known }}
+            </div>
+            <div class="text-xs text-stone-500">
+              认识
+            </div>
           </div>
           <div class="stat-card stat-amber">
-            <div class="text-2xl font-bold text-amber-600">{{ groupStats.familiar }}</div>
-            <div class="text-xs text-stone-500">熟悉</div>
+            <div class="text-2xl font-bold text-amber-600">
+              {{ groupStats.familiar }}
+            </div>
+            <div class="text-xs text-stone-500">
+              熟悉
+            </div>
           </div>
           <div class="stat-card stat-red">
-            <div class="text-2xl font-bold text-red-600">{{ groupStats.unknown }}</div>
-            <div class="text-xs text-stone-500">不认识</div>
+            <div class="text-2xl font-bold text-red-600">
+              {{ groupStats.unknown }}
+            </div>
+            <div class="text-xs text-stone-500">
+              不认识
+            </div>
           </div>
         </div>
 
         <div class="space-y-3">
-          <button class="action-btn action-btn-amber w-full" @click="startAgain">
+          <button
+            class="action-btn action-btn-amber w-full"
+            @click="startAgain"
+          >
             继续复习 🔄
           </button>
-          <UButton size="lg" variant="ghost" class="rounded-xl w-full" @click="goBack">
+          <UButton
+            size="lg"
+            variant="ghost"
+            class="rounded-xl w-full"
+            @click="goBack"
+          >
             返回首页
           </UButton>
         </div>
@@ -217,11 +321,20 @@ onMounted(() => {
     </div>
 
     <!-- Review flow -->
-    <div v-else class="max-w-lg mx-auto w-full px-4 min-h-[calc(100vh-4rem)] flex flex-col justify-between">
+    <div
+      v-else
+      class="max-w-lg mx-auto w-full px-4 min-h-[calc(100vh-4rem)] flex flex-col justify-between"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between mb-4 py-2 border-b border-stone-100">
-        <button @click="goBack" class="flex items-center gap-1 text-stone-400 hover:text-orange-600 transition-colors">
-          <UIcon name="i-lucide-arrow-left" class="text-xl" />
+        <button
+          class="flex items-center gap-1 text-stone-400 hover:text-orange-600 transition-colors"
+          @click="goBack"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="text-xl"
+          />
           <span class="text-sm">返回</span>
         </button>
         <div class="text-center">
@@ -229,7 +342,10 @@ onMounted(() => {
           <span class="text-sm font-semibold text-orange-600">{{ progressText }}</span>
         </div>
         <!-- Status dropdown -->
-        <div v-if="showResult && currentChar" class="relative">
+        <div
+          v-if="showResult && currentChar"
+          class="relative"
+        >
           <USelect
             :model-value="currentChar.status"
             :items="statusOptions"
@@ -239,26 +355,43 @@ onMounted(() => {
             @update:model-value="changeStatus"
           />
         </div>
-        <div v-else class="w-28" />
+        <div
+          v-else
+          class="w-28"
+        />
       </div>
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col justify-center py-4">
-        <Transition name="char-card" mode="out-in">
-          <div :key="currentIndex" class="text-center space-y-6">
+        <Transition
+          name="char-card"
+          mode="out-in"
+        >
+          <div
+            :key="currentIndex"
+            class="text-center space-y-6"
+          >
             <!-- Character Display inside Tian Zi Ge -->
             <div class="py-4">
               <div class="tian-zi-ge mx-auto">
-                <div class="char-display">{{ currentChar?.char }}</div>
+                <div class="char-display">
+                  {{ currentChar?.char }}
+                </div>
               </div>
             </div>
 
             <!-- BEFORE ANSWER -->
-            <div v-if="!showResult" class="space-y-6">
+            <div
+              v-if="!showResult"
+              class="space-y-6"
+            >
               <!-- Hint Text -->
               <div class="h-16 flex items-center justify-center">
                 <Transition name="fade">
-                  <div v-if="showHint" class="warm-card inline-block px-5 py-3">
+                  <div
+                    v-if="showHint"
+                    class="warm-card inline-block px-5 py-3"
+                  >
                     <span class="text-lg text-stone-600">{{ hintText }}</span>
                   </div>
                 </Transition>
@@ -269,7 +402,6 @@ onMounted(() => {
                 <div class="flex gap-3">
                   <button
                     class="action-btn action-btn-green flex-1"
-                    :disabled="submitting"
                     @click="selectStatus(1)"
                   >
                     认识
@@ -277,14 +409,12 @@ onMounted(() => {
                   <button
                     v-if="!hintUsed"
                     class="action-btn action-btn-amber flex-1"
-                    :disabled="submitting"
                     @click="selectStatus(2)"
                   >
                     熟悉
                   </button>
                   <button
                     class="action-btn action-btn-red flex-1"
-                    :disabled="submitting"
                     @click="selectStatus(3)"
                   >
                     不认识
@@ -304,16 +434,24 @@ onMounted(() => {
             </div>
 
             <!-- AFTER ANSWER (Result Details) -->
-            <div v-else-if="currentChar" class="space-y-4">
+            <div
+              v-else-if="currentChar"
+              class="space-y-4"
+            >
               <!-- Status badge -->
               <div class="flex justify-center">
-                <span class="status-badge" :class="`status-badge-${currentChar.status}`">
+                <span
+                  class="status-badge"
+                  :class="`status-badge-${currentChar.status}`"
+                >
                   {{ statusLabels[currentChar.status] }}
                 </span>
               </div>
 
               <!-- Pinyin -->
-              <div class="pinyin-display">{{ currentChar.pinyin }}</div>
+              <div class="pinyin-display">
+                {{ currentChar.pinyin }}
+              </div>
 
               <!-- Words -->
               <div class="flex flex-wrap gap-2 justify-center">
@@ -327,13 +465,21 @@ onMounted(() => {
               </div>
 
               <!-- Sentence -->
-              <div v-if="currentChar.sentence" class="warm-card p-4 text-left">
-                <p class="text-stone-600 text-base leading-relaxed">{{ currentChar.sentence }}</p>
+              <div
+                v-if="currentChar.sentence"
+                class="warm-card p-4 text-left"
+              >
+                <p class="text-stone-600 text-base leading-relaxed">
+                  {{ currentChar.sentence }}
+                </p>
               </div>
 
               <!-- Next button -->
               <div class="pt-2">
-                <button class="action-btn action-btn-amber w-full" @click="nextChar">
+                <button
+                  class="action-btn action-btn-amber w-full"
+                  @click="nextChar"
+                >
                   {{ currentIndex < characters.length - 1 ? '下一个 →' : '查看结果 🏆' }}
                 </button>
               </div>

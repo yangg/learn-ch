@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   const userId = event.context.userId as string
   const sql = useDb()
-  const body = await readBody<{ batchSize?: number; nickname?: string }>(event)
+  const body = await readBody<{ batchSize?: number, nickname?: string }>(event)
 
   // Get current settings for defaults
   const [current] = await sql`
