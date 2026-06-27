@@ -1,77 +1,72 @@
-<script setup>
+<script setup lang="ts">
+const route = useRoute()
+
 useHead({
   meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+    { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
   ],
   htmlAttrs: {
-    lang: 'en'
+    lang: 'zh-CN'
   }
 })
 
-const title = 'Nuxt Starter Template'
-const description = 'A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours.'
+const title = '识字乐园 - 汉字学习'
+const description = '专为小朋友设计的汉字学习乐园'
 
 useSeoMeta({
   title,
   description,
   ogTitle: title,
-  ogDescription: description,
-  ogImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
-  twitterCard: 'summary_large_image'
+  ogDescription: description
 })
+
+const tabs = [
+  { label: '认字', icon: 'i-lucide-book-open', to: '/' },
+  { label: '复习', icon: 'i-lucide-refresh-cw', to: '/review' },
+  { label: '汉字', icon: 'i-lucide-grid-2x2', to: '/my-characters' },
+  { label: '设置', icon: 'i-lucide-settings', to: '/settings' }
+]
+
+const showTabBar = computed(() => {
+  const path = route.path
+  // Hide on login, learn, and character detail pages
+  if (path === '/login') return false
+  if (path === '/learn') return false
+  if (path.startsWith('/character/')) return false
+  return true
+})
+
+function isTabActive(tabTo: string) {
+  if (tabTo === '/') return route.path === '/'
+  return route.path.startsWith(tabTo)
+}
 </script>
 
 <template>
   <UApp>
-    <UHeader>
-      <template #left>
-        <NuxtLink to="/">
-          <AppLogo class="w-auto h-6 shrink-0" />
-        </NuxtLink>
-
-        <TemplateMenu />
-      </template>
-
-      <template #right>
-        <UColorModeButton />
-
-        <UButton
-          to="https://github.com/nuxt-ui-templates/starter"
-          target="_blank"
-          icon="i-simple-icons-github"
-          aria-label="GitHub"
-          color="neutral"
-          variant="ghost"
-        />
-      </template>
-    </UHeader>
-
-    <UMain>
+    <div :class="{ 'pb-20': showTabBar }">
       <NuxtPage />
-    </UMain>
+    </div>
 
-    <USeparator icon="i-simple-icons-nuxtdotjs" />
-
-    <UFooter>
-      <template #left>
-        <p class="text-sm text-muted">
-          Built with Nuxt UI • © {{ new Date().getFullYear() }}
-        </p>
-      </template>
-
-      <template #right>
-        <UButton
-          to="https://github.com/nuxt-ui-templates/starter"
-          target="_blank"
-          icon="i-simple-icons-github"
-          aria-label="GitHub"
-          color="neutral"
-          variant="ghost"
-        />
-      </template>
-    </UFooter>
+    <!-- Bottom Tab Bar -->
+    <Transition name="slide-up">
+      <div v-if="showTabBar" class="tab-bar">
+        <nav>
+          <NuxtLink
+            v-for="tab in tabs"
+            :key="tab.to"
+            :to="tab.to"
+            class="tab-bar-item"
+            :class="{ active: isTabActive(tab.to) }"
+          >
+            <UIcon :name="tab.icon" class="tab-icon" />
+            <span>{{ tab.label }}</span>
+          </NuxtLink>
+        </nav>
+      </div>
+    </Transition>
   </UApp>
 </template>

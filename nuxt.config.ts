@@ -14,7 +14,20 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: false }
+  },
+
+  runtimeConfig: {
+    authPassword: process.env.AUTH_PASSWORD || 'dev123',
+    sessionSecret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
+    databaseUrl: process.env.DATABASE_URL || ''
+  },
+
+  nitro: {
+    preset: 'deno-deploy',
+    rollupConfig: {
+      external: ['cloudflare:sockets']
+    }
   },
 
   compatibilityDate: '2025-01-15',

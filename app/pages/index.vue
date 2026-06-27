@@ -1,76 +1,95 @@
+<script setup lang="ts">
+const { data: stats, refresh } = useFetch('/api/characters/stats', {
+  key: 'home-stats'
+})
+
+// Refresh stats when navigating back to this page
+onActivated(() => refresh())
+
+const progressPercent = computed(() => {
+  if (!stats.value || stats.value.total === 0) return 0
+  return Math.round((stats.value.known / stats.value.total) * 100)
+})
+
+const statCards = computed(() => [
+  {
+    label: '认识',
+    icon: 'i-lucide-check-circle',
+    value: stats.value?.known ?? 0,
+    colorClass: 'stat-green',
+    iconColor: 'text-emerald-500'
+  },
+  {
+    label: '熟悉',
+    icon: 'i-lucide-star',
+    value: stats.value?.familiar ?? 0,
+    colorClass: 'stat-amber',
+    iconColor: 'text-amber-500'
+  },
+  {
+    label: '不认识',
+    icon: 'i-lucide-x-circle',
+    value: stats.value?.unknown ?? 0,
+    colorClass: 'stat-red',
+    iconColor: 'text-red-500'
+  },
+  {
+    label: '待确认',
+    icon: 'i-lucide-help-circle',
+    value: stats.value?.pending ?? 0,
+    colorClass: 'stat-gray',
+    iconColor: 'text-stone-400'
+  }
+])
+</script>
+
 <template>
-  <div>
-    <UPageHero
-      title="Nuxt Starter Template"
-      description="A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours."
-      :links="[{
-        label: 'Get started',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank',
-        trailingIcon: 'i-lucide-arrow-right',
-        size: 'xl'
-      }, {
-        label: 'Use this template',
-        to: 'https://github.com/nuxt-ui-templates/starter',
-        target: '_blank',
-        icon: 'i-simple-icons-github',
-        size: 'xl',
-        color: 'neutral',
-        variant: 'subtle'
-      }]"
-    />
+  <div class="max-w-lg mx-auto px-4 pt-6 pb-24">
+    <!-- Title -->
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-orange-700">brook 的识字乐园 ✨</h1>
+      <p class="text-stone-400 text-sm mt-1">每天认几个字，积少成多</p>
+    </div>
 
-    <UPageSection
-      id="features"
-      title="Everything you need to build modern Nuxt apps"
-      description="Start with a solid foundation. This template includes all the essentials for building production-ready applications with Nuxt UI's powerful component system."
-      :features="[{
-        icon: 'i-lucide-rocket',
-        title: 'Production-ready from day one',
-        description: 'Pre-configured with TypeScript, ESLint, Tailwind CSS, and all the best practices. Focus on building features, not setting up tooling.'
-      }, {
-        icon: 'i-lucide-palette',
-        title: 'Beautiful by default',
-        description: 'Leveraging Nuxt UI\'s design system with automatic dark mode, consistent spacing, and polished components that look great out of the box.'
-      }, {
-        icon: 'i-lucide-zap',
-        title: 'Lightning fast',
-        description: 'Optimized for performance with SSR/SSG support, automatic code splitting, and edge-ready deployment. Your users will love the speed.'
-      }, {
-        icon: 'i-lucide-blocks',
-        title: '100+ components included',
-        description: 'Access Nuxt UI\'s comprehensive component library. From forms to navigation, everything is accessible, responsive, and customizable.'
-      }, {
-        icon: 'i-lucide-code-2',
-        title: 'Developer experience first',
-        description: 'Auto-imports, hot module replacement, and TypeScript support. Write less boilerplate and ship more features.'
-      }, {
-        icon: 'i-lucide-shield-check',
-        title: 'Built for scale',
-        description: 'Enterprise-ready architecture with proper error handling, SEO optimization, and security best practices built-in.'
-      }]"
-    />
+    <!-- Progress Bar -->
+    <div v-if="stats" class="warm-card p-4 mb-6">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-medium text-stone-600">学习进度</span>
+        <span class="text-sm font-semibold text-orange-600">{{ stats.known }} / {{ stats.total }}</span>
+      </div>
+      <UProgress :value="progressPercent" size="lg" />
+      <p class="text-xs text-stone-400 mt-1.5 text-right">{{ progressPercent }}%</p>
+    </div>
 
-    <UPageSection>
-      <UPageCTA
-        title="Ready to build your next Nuxt app?"
-        description="Join thousands of developers building with Nuxt and Nuxt UI. Get this template and start shipping today."
-        variant="subtle"
-        :links="[{
-          label: 'Start building',
-          to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-          target: '_blank',
-          trailingIcon: 'i-lucide-arrow-right',
-          color: 'neutral'
-        }, {
-          label: 'View on GitHub',
-          to: 'https://github.com/nuxt-ui-templates/starter',
-          target: '_blank',
-          icon: 'i-simple-icons-github',
-          color: 'neutral',
-          variant: 'outline'
-        }]"
-      />
-    </UPageSection>
+    <!-- Stat Cards Grid -->
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div
+        v-for="card in statCards"
+        :key="card.label"
+        class="stat-card"
+        :class="card.colorClass"
+      >
+        <UIcon :name="card.icon" :class="card.iconColor" class="text-2xl mb-1" />
+        <div class="text-2xl font-bold text-stone-700">{{ card.value }}</div>
+        <div class="text-xs text-stone-500 font-medium">{{ card.label }}</div>
+      </div>
+    </div>
+
+    <!-- Today's count -->
+    <div v-if="stats" class="text-center mb-6">
+      <div class="warm-card inline-flex items-center gap-2 px-5 py-2.5">
+        <span class="text-lg">📅</span>
+        <span class="text-sm text-stone-600">今天已学</span>
+        <span class="text-xl font-bold text-orange-600">{{ stats.todayCount }}</span>
+        <span class="text-sm text-stone-600">个字</span>
+      </div>
+    </div>
+
+    <!-- Start Learning Button -->
+    <NuxtLink to="/learn" class="block">
+      <button class="action-btn action-btn-amber w-full text-xl pulse-glow">
+        开始认字 📖
+      </button>
+    </NuxtLink>
   </div>
 </template>
