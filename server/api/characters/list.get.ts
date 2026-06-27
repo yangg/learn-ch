@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     if (statusFilter === 0) {
       // Status 0: characters without progress OR with status = 0
       rows = await sql`
-        SELECT c.*, COALESCE(up.status, 0) AS status, up.updated_at
+        SELECT c.id, c.char, COALESCE(up.status, 0) AS status
         FROM characters c
         LEFT JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
         WHERE up.id IS NULL OR up.status = 0
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
       `
     } else {
       rows = await sql`
-        SELECT c.*, up.status, up.updated_at
+        SELECT c.id, c.char, up.status
         FROM characters c
         INNER JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
         WHERE up.status = ${statusFilter}
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     rows = await sql`
-      SELECT c.*, COALESCE(up.status, 0) AS status, up.updated_at
+      SELECT c.id, c.char, COALESCE(up.status, 0) AS status
       FROM characters c
       LEFT JOIN user_progress up ON up.character_id = c.id AND up.user_id = ${userId}
       ORDER BY c.seq ASC

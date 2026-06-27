@@ -1,11 +1,7 @@
 <script setup lang="ts">
 interface Character {
   id: string
-  seq: number
   char: string
-  pinyin: string
-  words: string
-  sentence: string
   status: number
 }
 
