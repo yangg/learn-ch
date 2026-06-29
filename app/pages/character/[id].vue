@@ -136,8 +136,11 @@ function goBack() {
             </div>
           </div>
 
-          <div class="pinyin-display my-3">
-            {{ char.pinyin }}
+          <div class="pinyin-grid my-3">
+            <div class="pinyin-grid-lines" />
+            <div class="pinyin-grid-line-2" />
+            <div class="pinyin-grid-line-3" />
+            <span class="pinyin-grid-text">{{ char.pinyin }}</span>
           </div>
 
           <div class="flex items-center justify-center gap-3 mb-6">

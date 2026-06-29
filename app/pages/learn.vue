@@ -218,6 +218,28 @@ async function startAgain() {
   }
 }
 
+// Swipe gesture support
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const swipeThreshold = 80
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX.value = e.touches[0].clientX
+  touchStartY.value = e.touches[0].clientY
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const deltaX = touchStartX.value - e.changedTouches[0].clientX
+  const deltaY = Math.abs(touchStartY.value - e.changedTouches[0].clientY)
+
+  // Left swipe (deltaX > 0 means swiped left) and mostly horizontal
+  if (deltaX > swipeThreshold && deltaY < deltaX) {
+    if (showResult.value) {
+      nextChar()
+    }
+  }
+}
+
 onMounted(() => {
   fetchBatch()
 })
@@ -329,6 +351,8 @@ onMounted(() => {
     <div
       v-else
       class="max-w-lg mx-auto w-full px-4 min-h-[calc(100vh-4rem)] flex flex-col justify-between"
+      @touchstart="onTouchStart"
+      @touchend="onTouchEnd"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-4 py-2 border-b border-stone-100">
@@ -452,9 +476,12 @@ onMounted(() => {
                 </span>
               </div>
 
-              <!-- Pinyin -->
-              <div class="pinyin-display">
-                {{ currentChar.pinyin }}
+              <!-- Pinyin in 四线三格 -->
+              <div class="pinyin-grid">
+                <div class="pinyin-grid-lines" />
+                <div class="pinyin-grid-line-2" />
+                <div class="pinyin-grid-line-3" />
+                <span class="pinyin-grid-text">{{ currentChar.pinyin }}</span>
               </div>
 
               <!-- Words -->

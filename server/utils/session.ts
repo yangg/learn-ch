@@ -21,7 +21,7 @@ export function createAppSession(event: H3Event, userId: string) {
     secure: !import.meta.dev,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 30 // 30 days
+    maxAge: 60 * 60 * 24 * 365 // 1 year
   })
 }
 
